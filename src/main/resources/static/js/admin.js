@@ -30,7 +30,7 @@ async function initializeApp() {
 
 async function loadCurrentUser() {
     try {
-        const response = await fetch('/api/current-user');
+        const response = await fetch('/admin/current-user');
         if (response.ok) {
             const user = await response.json();
             document.getElementById('currentUserInfo').textContent =
@@ -44,7 +44,7 @@ async function loadCurrentUser() {
 async function loadAllUsers() {
     showLoading(true);
     try {
-        const response = await fetch('/api/users');
+        const response = await fetch('/admin/users');
         if (response.ok) {
             const users = await response.json();
             renderUsersTable(users);
@@ -60,7 +60,7 @@ async function loadAllUsers() {
 async function loadAllRoles() {
     console.log('Loading roles from API...');
     try {
-        const response = await fetch('/api/roles');
+        const response = await fetch('/admin/roles');
         console.log('Roles response status:', response.status);
 
         if (response.ok) {
@@ -182,7 +182,7 @@ function openCreateUserForm() {
 
 async function openEditUserForm(userId) {
     try {
-        const response = await fetch(`/api/users/${userId}`);
+        const response = await fetch(`/admin/users/${userId}`);
         if (response.ok) {
             const user = await response.json();
 
@@ -254,7 +254,7 @@ async function saveUser() {
         let response;
         if (currentEditingUserId) {
             userData.id = currentEditingUserId;
-            response = await fetch(`/api/users/${currentEditingUserId}`, {
+            response = await fetch(`/admin/users/${currentEditingUserId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -262,7 +262,7 @@ async function saveUser() {
                 body: JSON.stringify(userData)
             });
         } else {
-            response = await fetch('/api/users', {
+            response = await fetch('/admin/users', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -310,7 +310,7 @@ function showLoading(show) {
 
 async function deleteUser(userId) {
     try {
-        const response = await fetch(`/api/users/${userId}`, {
+        const response = await fetch(`/admin/users/${userId}`, {
             method: 'DELETE'
         });
 

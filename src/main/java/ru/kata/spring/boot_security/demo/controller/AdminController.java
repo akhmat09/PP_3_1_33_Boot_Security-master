@@ -1,12 +1,18 @@
 package ru.kata.spring.boot_security.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import ru.kata.spring.boot_security.demo.dto.UserDto;
 import ru.kata.spring.boot_security.demo.entity.User;
+import ru.kata.spring.boot_security.demo.entity.Role;
 import ru.kata.spring.boot_security.demo.service.UserService;
 import ru.kata.spring.boot_security.demo.service.RoleService;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -21,48 +27,112 @@ public class AdminController {
         this.roleService = roleService;
     }
 
+
     @GetMapping
-    public String displayAdminPanel(Model model) {
-        model.addAttribute("users", userService.getAllUsers());
+    public String displayAdminPanel() {
         return "admin/admin-panel";
     }
 
+
+
     @GetMapping("/users")
-    public String displayAllUsers(Model model) {
-        model.addAttribute("users", userService.getAllUsers());
-        return "admin/users-list";
+    @ResponseBody
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @GetMapping("/users/new")
-    public String displayCreateUserForm(Model model) {
-        model.addAttribute("user", new User());
-        model.addAttribute("allRoles", roleService.getAllRoles());
-        return "admin/user-form";
+    @GetMapping("/users/{id}")
+    @ResponseBody
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        User user = userService.getUserById(id);
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping("/users")
-    public String processCreateUser(@ModelAttribute User user) {
-        userService.saveUser(user);
-        return "redirect:/admin/users";
+    @ResponseBody
+    public ResponseEntity<?> createUser(@RequestBody UserDto userDto) {
+        try {
+            User user = convertToEntity(userDto);
+            userService.saveUser(user);
+            return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error creating user: " + e.getMessage());
+        }
     }
 
-    @GetMapping("/users/edit/{id}")
-    public String displayEditUserForm(@PathVariable Long id, Model model) {
-        User user = userService.getUserById(id);
-        model.addAttribute("user", user);
-        model.addAttribute("allRoles", roleService.getAllRoles());
-        return "admin/user-edit";
+    @PutMapping("/users/{id}")
+    @ResponseBody
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
+        try {
+            User user = convertToEntity(userDto);
+            user.setId(id);
+            userService.updateUser(id, user);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error updating user: " + e.getMessage());
+        }
     }
 
-    @PostMapping("/users/edit/{id}")
-    public String processUpdateUser(@PathVariable Long id, @ModelAttribute User user) {
-        userService.updateUser(id, user);
-        return "redirect:/admin/users";
-    }
-
-    @PostMapping("/users/delete/{id}")
-    public String processDeleteUser(@PathVariable Long id) {
+    @DeleteMapping("/users/{id}")
+    @ResponseBody
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
-        return "redirect:/admin/users";
+        return ResponseEntity.noContent().build();
+    }
+
+
+
+    @GetMapping("/roles")
+    @ResponseBody
+    public ResponseEntity<?> getAllRoles() {
+        try {
+            List<Role> roles = roleService.getAllRoles();
+            List<Map<String, Object>> roleDtos = roles.stream()
+                    .map(role -> {
+                        Map<String, Object> roleMap = new HashMap<>();
+                        roleMap.put("id", role.getId());
+                        roleMap.put("name", role.getName());
+                        return roleMap;
+                    })
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(roleDtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
+
+    private User convertToEntity(UserDto userDto) {
+        User user = new User();
+        user.setId(userDto.getId());
+        user.setEmail(userDto.getEmail());
+        user.setPassword(userDto.getPassword());
+        user.setFirstName(userDto.getFirstName());
+        user.setLastName(userDto.getLastName());
+        user.setAge(userDto.getAge());
+
+        Set<Role> roles = new HashSet<>();
+        if (userDto.getRoleIds() != null && !userDto.getRoleIds().isEmpty()) {
+            for (Long roleId : userDto.getRoleIds()) {
+                Role role = roleService.getAllRoles().stream()
+                        .filter(r -> r.getId().equals(roleId))
+                        .findFirst()
+                        .orElse(null);
+                if (role != null) {
+                    roles.add(role);
+                }
+            }
+        }
+
+        if (roles.isEmpty()) {
+            Role defaultRole = roleService.findByName("ROLE_USER");
+            if (defaultRole != null) {
+                roles.add(defaultRole);
+            }
+        }
+
+        user.setRoles(roles);
+        return user;
     }
 }

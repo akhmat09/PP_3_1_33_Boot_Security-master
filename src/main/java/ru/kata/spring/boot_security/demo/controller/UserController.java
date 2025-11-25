@@ -1,10 +1,10 @@
 package ru.kata.spring.boot_security.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import ru.kata.spring.boot_security.demo.entity.User;
 import ru.kata.spring.boot_security.demo.service.UserService;
 
@@ -23,9 +23,15 @@ public class UserController {
 
     @GetMapping
     public String displayUserProfile(Principal principal, Model model) {
-        String username = principal.getName();
-        User user = userService.findByUsername(username);
+        User user = userService.findByUsername(principal.getName());
         model.addAttribute("user", user);
-        return "user/user-profile";
+        return "user-profile";
+    }
+
+    @GetMapping("/profile")
+    @ResponseBody
+    public ResponseEntity<User> getCurrentUser(Principal principal) {
+        User user = userService.findByUsername(principal.getName());
+        return ResponseEntity.ok(user);
     }
 }

@@ -26,6 +26,7 @@ public class WebSecurityConfig {
         this.loginSuccessHandler = loginSuccessHandler;
         this.passwordEncoder = passwordEncoder;
     }
+
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers("/js/**", "/css/**", "/webjars/**");
@@ -35,13 +36,11 @@ public class WebSecurityConfig {
     public SecurityFilterChain configureHttpSecurity(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/**") // Отключаем CSRF для API
+                        .ignoringRequestMatchers("/admin/users/**")
                 )
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/users/**", "/api/roles").hasRole("ADMIN")
-                        .requestMatchers("/api/current-user").authenticated()
                         .requestMatchers("/", "/login", "/js/**", "/css/**", "/webjars/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -57,6 +56,7 @@ public class WebSecurityConfig {
 
         return http.build();
     }
+
     @Bean
     public DaoAuthenticationProvider createDaoAuthenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
