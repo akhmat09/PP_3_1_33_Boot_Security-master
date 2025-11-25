@@ -27,13 +27,13 @@ public class AdminController {
         this.roleService = roleService;
     }
 
-
+    // Главная страница админки (SPA)
     @GetMapping
     public String displayAdminPanel() {
         return "admin/admin-panel";
     }
 
-
+    // ========== REST API для SPA ==========
 
     @GetMapping("/users")
     @ResponseBody
@@ -80,8 +80,6 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
-
-
     @GetMapping("/roles")
     @ResponseBody
     public ResponseEntity<?> getAllRoles() {
@@ -101,7 +99,7 @@ public class AdminController {
         }
     }
 
-
+    // ========== UTILITY METHODS ==========
 
     private User convertToEntity(UserDto userDto) {
         User user = new User();

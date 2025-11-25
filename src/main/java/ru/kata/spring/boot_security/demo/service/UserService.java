@@ -10,4 +10,6 @@ public interface UserService {
     void saveUser(User user);
     void updateUser(Long id, User user);
     void deleteUser(Long id);
+    void saveUserWithRoles(User user, List<Long> roleIds);
+    void updateUserWithRoles(Long id, User user, List<Long> roleIds);
 }

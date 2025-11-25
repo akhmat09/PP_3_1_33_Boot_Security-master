@@ -56,7 +56,7 @@ public class User implements UserDetails {
     @Override
     @JsonIgnore
     public String getUsername() {
-        return email; // Просто возвращаем email
+        return email;
     }
 
     @Override
@@ -83,7 +83,7 @@ public class User implements UserDetails {
         return true;
     }
 
-    // Геттеры и сеттеры
+
     public Long getId() {
         return id;
     }

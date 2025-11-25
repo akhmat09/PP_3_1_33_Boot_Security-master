@@ -85,11 +85,6 @@
             margin-right: 4px;
         }
 
-        .nav-tabs .nav-link.active {
-            font-weight: bold;
-            background-color: white;
-        }
-
         .user-profile-table th {
             background-color: #343a40;
             color: white;
@@ -127,7 +122,7 @@
             text-align: center;
         }
 
-        /* Стили для текстовых ролей - компактные, каждая с новой строки */
+        /* Стили для текстовых ролей */
         .roles-text-container {
             text-align: center;
             max-height: 100px;
@@ -191,6 +186,11 @@
             max-width: 150px;
             margin: 0 auto;
         }
+
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            background-color: white;
+        }
     </style>
 </head>
 <body>
@@ -228,9 +228,10 @@
 
         <!-- Основной контент -->
         <div class="col-md-9">
-            <!-- Админ панель (показывается при выборе Admin) -->
+            <!-- Админ панель -->
             <div id="adminContent" class="main-content">
                 <h4 class="mb-3">Admin Panel</h4>
+
                 <!-- Вкладки для перехода между Admin Panel и New User -->
                 <ul class="nav nav-tabs mb-4">
                     <li class="nav-item">
@@ -245,10 +246,11 @@
                     </li>
                 </ul>
 
-                <!-- Содержимое для Admin Panel -->
+                <!-- Содержимое для Users Table -->
                 <div id="usersTableContent">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="text-dark mb-0" id="tableTitle">All users</h4>
+
                     </div>
 
                     <!-- Loading Spinner -->
@@ -330,30 +332,6 @@
                             </div>
                         </form>
                     </div>
-                </div>
-            </div>
-
-            <!-- Профиль пользователя (показывается при выборе User) -->
-            <div id="userContent" class="main-content d-none">
-                <h3 class="mb-4">User information-page</h3>
-                <h5 class="mb-3">About user</h5>
-
-                <div class="table-responsive">
-                    <table class="table table-bordered user-profile-table">
-                        <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Age</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                        </tr>
-                        </thead>
-                        <tbody id="userProfileTableBody">
-                        <!-- User data will be loaded here by JavaScript -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -493,6 +471,7 @@
     let currentEditingUserId = null;
     let allRoles = [];
     let currentView = 'admin';
+    let userToDelete = null;
 
     document.addEventListener('DOMContentLoaded', function () {
         console.log('DOM loaded - starting initialization');
@@ -524,8 +503,8 @@
         document.getElementById('createUserBtn').addEventListener('click', createUser);
         document.getElementById('saveEditUserBtn').addEventListener('click', saveEditUser);
         document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
-            if (window.userToDelete) {
-                deleteUser(window.userToDelete);
+            if (userToDelete) {
+                deleteUser(userToDelete);
             }
         });
     }
@@ -539,12 +518,7 @@
 
         if (view === 'admin') {
             document.getElementById('adminContent').classList.remove('d-none');
-            document.getElementById('userContent').classList.add('d-none');
             loadAllUsers();
-        } else if (view === 'user') {
-            document.getElementById('adminContent').classList.add('d-none');
-            document.getElementById('userContent').classList.remove('d-none');
-            loadUserProfile();
         }
     }
 
@@ -573,7 +547,7 @@
 
     async function loadCurrentUser() {
         try {
-            const response = await fetch('/admin/current-user');
+            const response = await fetch('/user/profile');
             if (response.ok) {
                 const user = await response.json();
                 const roles = user.roles.map(role => role.name.replace('ROLE_', '')).join(' ');
@@ -585,41 +559,6 @@
         }
     }
 
-    async function loadUserProfile() {
-        try {
-            const response = await fetch('/admin/current-user');
-            if (response.ok) {
-                const user = await response.json();
-                renderUserProfile(user);
-            }
-        } catch (error) {
-            console.error('Error loading user profile:', error);
-        }
-    }
-
-    function renderUserProfile(user) {
-        const tbody = document.getElementById('userProfileTableBody');
-        if (!tbody) {
-            console.error('userProfileTableBody not found');
-            return;
-        }
-
-        tbody.innerHTML = `
-        <tr>
-            <td>${user.id}</td>
-            <td>${user.firstName}</td>
-            <td>${user.lastName}</td>
-            <td>${user.age}</td>
-            <td>${user.email}</td>
-            <td>
-                ${user.roles.map(role =>
-            `<span class="badge bg-primary me-1">${role.name.replace('ROLE_', '')}</span>`
-        ).join('')}
-            </td>
-        </tr>
-    `;
-    }
-
     async function loadAllUsers() {
         showLoading(true);
         try {
@@ -627,6 +566,8 @@
             if (response.ok) {
                 const users = await response.json();
                 renderUsersTable(users);
+            } else {
+                console.error('Failed to load users:', response.status);
             }
         } catch (error) {
             console.error('Error loading users:', error);
@@ -749,6 +690,7 @@
             tbody.appendChild(row);
         });
 
+        // Добавляем обработчики для кнопок Edit
         document.querySelectorAll('.edit-user-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 const userId = this.getAttribute('data-user-id');
@@ -756,6 +698,7 @@
             });
         });
 
+        // Добавляем обработчики для кнопок Delete
         document.querySelectorAll('.delete-user-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 const userId = this.getAttribute('data-user-id');
@@ -903,7 +846,7 @@
             rolesDisplay.innerHTML = '<span class="text-muted">No roles assigned</span>';
         }
 
-        window.userToDelete = userId;
+        userToDelete = userId;
 
         const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
         modal.show();
@@ -919,7 +862,7 @@
                 const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
                 modal.hide();
                 await loadAllUsers(); // Обновляем таблицу
-                window.userToDelete = null;
+                userToDelete = null;
                 // Убрано сообщение об успешном удалении
             } else {
                 console.error('Failed to delete user');

@@ -10,6 +10,7 @@ import ru.kata.spring.boot_security.demo.service.RoleService;
 import ru.kata.spring.boot_security.demo.service.UserService;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Component
@@ -28,50 +29,59 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        System.out.println("=== STARTING DATA INITIALIZATION ===");
         initializeRoles();
         initializeUsers();
+        System.out.println("=== DATA INITIALIZATION COMPLETED ===");
     }
 
     private void initializeRoles() {
         if (roleService.findByName("ROLE_ADMIN") == null) {
             roleService.saveRole(new Role("ROLE_ADMIN"));
+            System.out.println("Created role: ROLE_ADMIN");
+        } else {
+            System.out.println("Role ROLE_ADMIN already exists");
         }
 
         if (roleService.findByName("ROLE_USER") == null) {
             roleService.saveRole(new Role("ROLE_USER"));
+            System.out.println("Created role: ROLE_USER");
+        } else {
+            System.out.println("Role ROLE_USER already exists");
         }
     }
 
     private void initializeUsers() {
+        // Create admin user
         if (userService.findByUsername("admin@mail.ru") == null) {
             User admin = new User();
             admin.setEmail("admin@mail.ru");
-            admin.setPassword(passwordEncoder.encode("admin"));
+            admin.setPassword("admin");
             admin.setFirstName("Admin");
             admin.setLastName("Adminov");
             admin.setAge(35);
 
-            Set<Role> adminRoles = new HashSet<>();
-            adminRoles.add(roleService.findByName("ROLE_ADMIN"));
-            adminRoles.add(roleService.findByName("ROLE_USER"));
-            admin.setRoles(adminRoles);
 
-            userService.saveUser(admin);
+            userService.saveUserWithRoles(admin, List.of(1L, 2L)); // ADMIN и USER
+            System.out.println("Created admin user: admin@mail.ru / admin");
+        } else {
+            System.out.println("Admin user already exists");
         }
+
 
         if (userService.findByUsername("user@mail.ru") == null) {
             User user = new User();
             user.setEmail("user@mail.ru");
-            user.setPassword(passwordEncoder.encode("user"));
+            user.setPassword("user");
             user.setFirstName("User");
             user.setLastName("Userov");
             user.setAge(30);
 
-            Set<Role> userRoles = new HashSet<>();
-            userRoles.add(roleService.findByName("ROLE_USER"));
-            user.setRoles(userRoles);
 
-            userService.saveUser(user);
+            userService.saveUserWithRoles(user, List.of(2L)); // USER
+            System.out.println("Created user: user@mail.ru / user");
+        } else {
+            System.out.println("User user already exists");
         }
     }
 }
